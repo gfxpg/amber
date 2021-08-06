@@ -1,0 +1,68 @@
+cabal-version: 1.24
+
+-- This file has been generated from package.yaml by hpack version 0.34.4.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 7b2c18115859e1560c9dc27822f42ab208819e2ca37caba678b4d28f77701e2d
+
+name:           amber
+version:        0.1.0.0
+homepage:       https://github.com/timlathy/amber#readme
+bug-reports:    https://github.com/timlathy/amber/issues
+build-type:     Custom
+extra-source-files:
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/timlathy/amber
+
+custom-setup
+  setup-depends:
+      Cabal
+    , base >=4.7 && <5
+    , directory
+
+library
+  exposed-modules:
+      Amber.FFI
+      Amber.Types
+  other-modules:
+      Paths_amber
+  hs-source-dirs:
+      src
+  extra-libraries:
+      ambercpp
+  build-depends:
+      base >=4.7 && <5
+    , mtl
+  default-language: Haskell2010
+
+executable amber-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_amber
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      amber
+    , base >=4.7 && <5
+    , mtl
+  default-language: Haskell2010
+
+test-suite amber-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Paths_amber
+  hs-source-dirs:
+      test
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      amber
+    , base >=4.7 && <5
+    , hspec
+    , mtl
+  default-language: Haskell2010

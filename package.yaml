@@ -1,0 +1,43 @@
+name: amber
+version: 0.1.0.0
+github: "timlathy/amber"
+
+extra-source-files:
+- README.md
+
+custom-setup:
+  dependencies:
+  - base >= 4.7 && < 5
+  - directory
+  - Cabal
+
+dependencies:
+- base >= 4.7 && < 5
+- mtl
+
+library:
+  source-dirs: src
+  extra-libraries: ambercpp
+
+executables:
+  amber-exe:
+    main: Main.hs
+    source-dirs: app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - amber
+
+tests:
+  amber-test:
+    main: Spec.hs
+    source-dirs: test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - amber
+    - hspec
