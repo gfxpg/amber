@@ -69,7 +69,6 @@ class LLVMAsm
 llvmasm_t CreateLLVMAsm()
 {
     LLVMInitializeAMDGPUAsmParser();
-    LLVMInitializeAMDGPUTarget();
     LLVMInitializeAMDGPUTargetInfo();
     LLVMInitializeAMDGPUTargetMC();
 
