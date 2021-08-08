@@ -13,7 +13,12 @@ custom-setup:
 
 dependencies:
 - base >= 4.7 && < 5
+- bytestring
 - mtl
+- transformers
+
+default-extensions:
+- OverloadedStrings
 
 library:
   source-dirs: src

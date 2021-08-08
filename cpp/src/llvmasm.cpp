@@ -1,6 +1,7 @@
 #include "llvmasm.h"
 
 #include <optional>
+#include <string>
 
 #include "llvm/MC/MCAsmBackend.h"
 #include "llvm/MC/MCAsmInfo.h"
@@ -26,7 +27,7 @@ class LLVMAsm
 {
   public:
     bool Init(llvm::StringRef triple_str, llvm::StringRef chip_str);
-    bool EmitInstruction(llvm::StringRef inst);
+    bool EmitBufferedAsm(size_t asm_len);
     bool EmitLabel(llvm::StringRef name, bool global);
     bool CreateTempSymbol(llvm::StringRef prefix, llvm::StringRef* name);
     bool SetSymbolValue(llvm::StringRef sym, uint64_t val);
@@ -44,6 +45,10 @@ class LLVMAsm
     {
         return _error;
     }
+    llvm::MutableArrayRef<char> AsmBuffer()
+    {
+        return _asm_buf;
+    }
     llvm::ArrayRef<char> ELFBytes() const
     {
         return llvm::ArrayRef<char>(_elf_bytes);
@@ -53,7 +58,7 @@ class LLVMAsm
     std::string _error{};
     llvm::SmallVector<char, 0> _elf_bytes{};
     llvm::raw_svector_ostream _elf_bytes_os{_elf_bytes};
-    llvm::MutableArrayRef<char> _asm_inst_buf{};
+    llvm::MutableArrayRef<char> _asm_buf{};
     llvm::SourceMgr _src_mgr{};
     llvm::MCObjectFileInfo _mofi{};
     std::optional<llvm::MCContext> _mc_ctx{};
@@ -80,48 +85,59 @@ void DestroyLLVMAsm(llvmasm_t la)
     delete reinterpret_cast<LLVMAsm*>(la);
 }
 
-bool InitLLVMAsm(llvmasm_t la, llvmasm_strref_t triple, llvmasm_strref_t chip)
+bool InitLLVMAsm(llvmasm_t la, const char* triple, size_t triple_len, const char* chip, size_t chip_len)
 {
-    return reinterpret_cast<LLVMAsm*>(la)->Init(
-        llvm::StringRef(triple.str, triple.len), llvm::StringRef(chip.str, chip.len));
+    return reinterpret_cast<LLVMAsm*>(la)->Init(llvm::StringRef(triple, triple_len), llvm::StringRef(chip, chip_len));
 }
 
-bool EmitAsmInstruction(llvmasm_t la, llvmasm_strref_t inst)
+void GetAsmBuffer(llvmasm_t la, char** buffer, size_t* buffer_size)
 {
-    return reinterpret_cast<LLVMAsm*>(la)->EmitInstruction(llvm::StringRef(inst.str, inst.len));
+    auto buf = reinterpret_cast<LLVMAsm*>(la)->AsmBuffer();
+    *buffer = buf.data();
+    *buffer_size = buf.size();
 }
 
-bool EmitAsmLabel(llvmasm_t la, llvmasm_strref_t name, bool global)
+bool EmitBuffered(llvmasm_t la, size_t asm_len)
 {
-    return reinterpret_cast<LLVMAsm*>(la)->EmitLabel(llvm::StringRef(name.str, name.len), global);
+    return reinterpret_cast<LLVMAsm*>(la)->EmitBufferedAsm(asm_len);
 }
 
-bool CreateTempSymbol(llvmasm_t la, llvmasm_strref_t prefix, llvmasm_strref_t* name)
+bool EmitAsmLabel(llvmasm_t la, const char* name, size_t name_len, bool global)
+{
+    return reinterpret_cast<LLVMAsm*>(la)->EmitLabel(llvm::StringRef(name, name_len), global);
+}
+
+bool CreateTempSymbol(llvmasm_t la, const char* prefix, size_t prefix_len, const char** name, size_t* name_len)
 {
     llvm::StringRef name_ref;
-    bool result = reinterpret_cast<LLVMAsm*>(la)->CreateTempSymbol(llvm::StringRef(prefix.str, prefix.len), &name_ref);
-    *name = {name_ref.data(), name_ref.size()};
+    bool result = reinterpret_cast<LLVMAsm*>(la)->CreateTempSymbol(llvm::StringRef(prefix, prefix_len), &name_ref);
+    *name = name_ref.data();
+    *name_len = name_ref.size();
     return result;
 }
 
-bool SetSymbolValue(llvmasm_t la, llvmasm_strref_t sym, uint64_t val)
+bool SetSymbolValue(llvmasm_t la, const char* sym, size_t sym_len, uint64_t val)
 {
-    return reinterpret_cast<LLVMAsm*>(la)->SetSymbolValue(llvm::StringRef(sym.str, sym.len), val);
+    return reinterpret_cast<LLVMAsm*>(la)->SetSymbolValue(llvm::StringRef(sym, sym_len), val);
 }
 
-bool EndProgram(llvmasm_t la, llvmasm_strref_t* out_bytes)
+bool EndProgram(llvmasm_t la, const char** elf_data, size_t* elf_data_len)
 {
     auto* la_ = reinterpret_cast<LLVMAsm*>(la);
     bool result = la_->EndProgram();
     if (result)
-        *out_bytes = {la_->ELFBytes().data(), la_->ELFBytes().size()};
+    {
+        *elf_data = la_->ELFBytes().data();
+        *elf_data_len = la_->ELFBytes().size();
+    }
     return result;
 }
 
-llvmasm_strref_t GetLLVMAsmError(llvmasm_t la)
+void GetLLVMAsmError(llvmasm_t la, const char** error, size_t* error_len)
 {
-    const auto& error = reinterpret_cast<LLVMAsm*>(la)->Error();
-    return {error.data(), error.size()};
+    const auto& error_str = reinterpret_cast<LLVMAsm*>(la)->Error();
+    *error = error_str.data();
+    *error_len = error_str.size();
 }
 
 bool LLVMAsm::EndProgram()
@@ -142,20 +158,11 @@ bool LLVMAsm::CreateTempSymbol(llvm::StringRef prefix, llvm::StringRef* name)
     return true;
 }
 
-bool LLVMAsm::EmitInstruction(llvm::StringRef inst)
+bool LLVMAsm::EmitBufferedAsm(size_t asm_len)
 {
-    if (inst.size() >= AsmStringBufferSize)
-    {
-        _error = std::string("Instruction string '")
-                     .append(inst)
-                     .append("' is too long, max length is")
-                     .append(std::to_string(AsmStringBufferSize));
-        return false;
-    }
-    memcpy(_asm_inst_buf.data(), inst.data(), inst.size());
-    _asm_inst_buf[inst.size()] = '\0';
-    dynamic_cast<llvm::AsmLexer&>(_mc_parser->getLexer()).setBuffer(llvm::StringRef(_asm_inst_buf.data(), inst.size()));
-
+    assert(asm_len <= AsmStringBufferSize);
+    _asm_buf[asm_len] = '\0';
+    dynamic_cast<llvm::AsmLexer&>(_mc_parser->getLexer()).setBuffer(llvm::StringRef(_asm_buf.data(), asm_len));
     return _mc_parser->Run(true, true) == 0;
 }
 
@@ -173,13 +180,9 @@ bool LLVMAsm::Init(llvm::StringRef triple_str, llvm::StringRef chip_str)
     llvm::Triple triple(triple_str);
     llvm::MCTargetOptions mc_opts{};
 
-    std::string e{};
-    const llvm::Target* target = llvm::TargetRegistry::lookupTarget(triple.str(), e);
+    const llvm::Target* target = llvm::TargetRegistry::lookupTarget(triple.str(), _error);
     if (!target)
-    {
-        _error = std::string("unable to find target by triple '").append(triple_str).append("': ").append(e);
         return false;
-    }
 
     _mc_instr_info.reset(target->createMCInstrInfo());
     if (!_mc_instr_info)
@@ -223,7 +226,7 @@ bool LLVMAsm::Init(llvm::StringRef triple_str, llvm::StringRef chip_str)
     }
 
     auto buf = llvm::WritableMemoryBuffer::getNewMemBuffer(AsmStringBufferSize);
-    _asm_inst_buf = buf->getBuffer();
+    _asm_buf = buf->getBuffer();
     _src_mgr.AddNewSourceBuffer(std::move(buf), llvm::SMLoc());
     _src_mgr.setDiagHandler(
         [](const llvm::SMDiagnostic& diag, void* this_ptr) {
