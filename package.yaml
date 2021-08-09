@@ -16,6 +16,7 @@ dependencies:
 - bytestring
 - mtl
 - transformers
+- containers
 
 default-extensions:
 - OverloadedStrings
