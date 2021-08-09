@@ -19,6 +19,8 @@ dependencies:
 
 default-extensions:
 - OverloadedStrings
+- MultiParamTypeClasses
+- GeneralizedNewtypeDeriving
 
 library:
   source-dirs: src

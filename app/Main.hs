@@ -1,15 +1,29 @@
 module Main where
 
+import qualified Amber.Backend.GFX9 as GFX9
 import Amber.FFI.LLVM
+import Amber.Program
 import Control.Monad (forM_)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Builder as BB
 import qualified Data.ByteString.Char8 as BC8
 import Data.ByteString.Short (ShortByteString)
+import GHC.Stack (HasCallStack)
 
-instruction :: ShortByteString -> Int -> BB.Builder
-instruction reg o = mconcat ["s_mov_b32", " "] <> BB.shortByteString reg <> ", " <> BB.intDec o
+pgm :: (Program m n, IntOps m n, ControlFlow m n) => m ()
+pgm = do
+  jump "test"
+  a <- reg "s0"
+  b <- reg "s1"
+  label "test" $ testLabel a b
+
+testLabel :: (HasCallStack, Program m n, IntOps m n, ControlFlow m n) => n -> n -> m ()
+testLabel a b = do
+  move a b
+  move b $ lit 13
+  add a a b
+  jump "test"
 
 main :: IO ()
 main = do
@@ -20,7 +34,5 @@ main = do
       <> "cs_entry, .sgpr_count: 1, .vgpr_count: 1}}, "
       <> ".internal_pipeline_hash: [0x1, 0x2], .registers: {0x2c07: 0}}]\n"
       <> ".end_amdgpu_pal_metadata"
-  forM_ [1..10000] $ \i ->
-    emitAsm llvm $ instruction "s32" i
-  elf <- assembleElf llvm
+  elf <- GFX9.assemble llvm pgm
   B.writeFile "out.elf" elf

@@ -4,7 +4,7 @@ cabal-version: 1.24
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f688446f2569dddfa5d0bdfc139aae469b52b1f1d978eae76cedd755994aef80
+-- hash: 87669addd2b834d977bfc5e4c5fe6078c4d996aa2489ab0b497a2dca5f02798d
 
 name:           amber
 version:        0.1.0.0
@@ -26,14 +26,17 @@ custom-setup
 
 library
   exposed-modules:
+      Amber.Backend.GFX9
       Amber.FFI.LLVM
-      Amber.Types
+      Amber.Program
   other-modules:
       Paths_amber
   hs-source-dirs:
       src
   default-extensions:
       OverloadedStrings
+      MultiParamTypeClasses
+      GeneralizedNewtypeDeriving
   extra-libraries:
       ambercpp
   build-depends:
@@ -51,6 +54,8 @@ executable amber-exe
       app
   default-extensions:
       OverloadedStrings
+      MultiParamTypeClasses
+      GeneralizedNewtypeDeriving
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       amber
@@ -69,6 +74,8 @@ test-suite amber-test
       test
   default-extensions:
       OverloadedStrings
+      MultiParamTypeClasses
+      GeneralizedNewtypeDeriving
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       amber

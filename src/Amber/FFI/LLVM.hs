@@ -1,7 +1,7 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 
-module Amber.FFI.LLVM (createLlvmAsm, emitAsm, assembleElf) where
+module Amber.FFI.LLVM (LlvmAsm, createLlvmAsm, emitAsm, assembleElf) where
 
 import Control.Monad (when)
 import Data.ByteString (ByteString)
