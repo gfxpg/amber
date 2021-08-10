@@ -15,6 +15,9 @@ class Program m n => ControlFlow m n | m -> n, n -> m where
 class Monad m => Program m n | m -> n, n -> m where
   lit :: Int -> n
   reg :: String -> m n
+
+  useSRegs :: Int -> (n -> m ()) -> m ()
+
   move :: n -> n -> m ()
 
 class Program m n => IntOps m n | m -> n where

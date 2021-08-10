@@ -14,9 +14,10 @@ import GHC.Stack (HasCallStack)
 pgm :: (Program m n, IntOps m n, ControlFlow m n) => m ()
 pgm = do
   jump "test"
-  a <- reg "s0"
-  b <- reg "s1"
-  label "test" $ testLabel a b
+  useSRegs 1 $ \reg0 ->
+    useSRegs 4 $ \regAligned ->
+      useSRegs 1 $ \reg1 ->
+        label "test" $ testLabel reg0 reg1
 
 testLabel :: (HasCallStack, Program m n, IntOps m n, ControlFlow m n) => n -> n -> m ()
 testLabel a b = do

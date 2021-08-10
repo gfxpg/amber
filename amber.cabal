@@ -4,7 +4,7 @@ cabal-version: 1.24
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b179cdef1864aab5c49a069eebf00dfe8efb2127cdc8bf3bd3e3d5aa66f9c161
+-- hash: db25eae03fd08593845a153117e29a828df3b7a1dc926368b1d7fd1f99d4a411
 
 name:           amber
 version:        0.1.0.0
@@ -35,16 +35,19 @@ library
       src
   default-extensions:
       OverloadedStrings
+      TupleSections
       MultiParamTypeClasses
       GeneralizedNewtypeDeriving
   extra-libraries:
       ambercpp
   build-depends:
       base >=4.7 && <5
+    , bitvec
     , bytestring
     , containers
     , mtl
     , transformers
+    , vector
   default-language: Haskell2010
 
 executable amber-exe
@@ -55,16 +58,19 @@ executable amber-exe
       app
   default-extensions:
       OverloadedStrings
+      TupleSections
       MultiParamTypeClasses
       GeneralizedNewtypeDeriving
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       amber
     , base >=4.7 && <5
+    , bitvec
     , bytestring
     , containers
     , mtl
     , transformers
+    , vector
   default-language: Haskell2010
 
 test-suite amber-test
@@ -76,15 +82,18 @@ test-suite amber-test
       test
   default-extensions:
       OverloadedStrings
+      TupleSections
       MultiParamTypeClasses
       GeneralizedNewtypeDeriving
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       amber
     , base >=4.7 && <5
+    , bitvec
     , bytestring
     , containers
     , hspec
     , mtl
     , transformers
+    , vector
   default-language: Haskell2010

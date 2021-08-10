@@ -17,9 +17,12 @@ dependencies:
 - mtl
 - transformers
 - containers
+- vector
+- bitvec
 
 default-extensions:
 - OverloadedStrings
+- TupleSections
 - MultiParamTypeClasses
 - GeneralizedNewtypeDeriving
 
