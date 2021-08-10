@@ -1,7 +1,7 @@
 module Main where
 
-import qualified Amber.Backend.GFX9 as GFX9
-import Amber.FFI.LLVM
+import Amber.Backend.GFX9 (evalProgram)
+import Amber.ElfAssembler
 import Amber.Program
 import Control.Monad (forM_)
 import Data.ByteString (ByteString)
@@ -14,6 +14,7 @@ import GHC.Stack (HasCallStack)
 pgm :: (Program m n, IntOps m n, ControlFlow m n) => m ()
 pgm = do
   jump "test"
+  a <- reg "error"
   useSRegs 1 $ \reg0 ->
     useSRegs 4 $ \regAligned ->
       useSRegs 1 $ \reg1 ->
@@ -28,12 +29,7 @@ testLabel a b = do
 
 main :: IO ()
 main = do
-  llvm <- createLlvmAsm "amdgcn--amdpal" "gfx900"
-  emitAsm llvm $
-    ".amdgpu_pal_metadata\n"
-      <> "amdpal.pipelines: [{.hardware_stages: {.cs: {.entry_point: "
-      <> "cs_entry, .sgpr_count: 1, .vgpr_count: 1}}, "
-      <> ".internal_pipeline_hash: [0x1, 0x2], .registers: {0x2c07: 0}}]\n"
-      <> ".end_amdgpu_pal_metadata"
-  elf <- GFX9.assemble llvm pgm
+  elf <- case evalProgram pgm of
+    Right p -> assembleElf p
+    Left e -> fail $ "ERROR: " <> e
   B.writeFile "out.elf" elf
