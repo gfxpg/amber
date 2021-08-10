@@ -4,7 +4,7 @@ cabal-version: 1.24
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 21c62c753f48b27f4b7720b7ace077c36c511f2650adaad49f8183aa81a10e71
+-- hash: 0afa3c5c6c8e6c3e6c03bbb9cd9feb9e31c882fd4713c0506212e10b99e62051
 
 name:           amber
 version:        0.1.0.0
@@ -26,10 +26,10 @@ custom-setup
 
 library
   exposed-modules:
+      Amber.Assembler
       Amber.Backend.GFX9
-      Amber.ElfAssembler
       Amber.FFI.LLVM
-      Amber.Program
+      Amber.Listing
   other-modules:
       Paths_amber
   hs-source-dirs:
